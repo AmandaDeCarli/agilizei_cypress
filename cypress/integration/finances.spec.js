@@ -1,10 +1,14 @@
 /// <reference types="cypress"/>
-import { format } from '../support/utils';
+import { format, prepareLocalStorage } from '../support/utils';
 
 context('Dev Finances Agilizei', () => {
     beforeEach(() => {
-        cy.visit('https://devfinance-agilizei.netlify.app');
-        cy.get('#data-table tbody tr').should('have.length', 0); 
+        cy.visit('https://devfinance-agilizei.netlify.app',{
+            onBeforeLoad: (win) => {
+                prepareLocalStorage(win)
+            }
+        });
+        cy.get('#data-table tbody tr').should('have.length', 2); 
     });
     it('Cadastrar entradas', () => {
         cy.get('#transaction .button').click();
@@ -12,7 +16,7 @@ context('Dev Finances Agilizei', () => {
         cy.get('[name=amount]').type(12);
         cy.get('[type=date]').type('2021-09-06');
         cy.get('button').contains('Salvar').click();
-        cy.get('#data-table tbody tr').should('have.length', 1); //espera que a tr tenha o tamanho de 1
+        cy.get('#data-table tbody tr').should('have.length', 3); //espera que a tr tenha o tamanho de 1
     });
 
     it('Cadastrar saídas', () => {
@@ -21,7 +25,7 @@ context('Dev Finances Agilizei', () => {
         cy.get('[name=amount]').type(-20);
         cy.get('[type=date]').type('2021-09-07');
         cy.get('button').contains('Salvar').click();
-        cy.get('#data-table tbody tr').should('have.length', 1);
+        cy.get('#data-table tbody tr').should('have.length', 3);
         
     });
 
@@ -46,16 +50,16 @@ context('Dev Finances Agilizei', () => {
           .find('img[onclick*=remove]')
           .click();
 
-        cy.get('td.decription')
+        cy.get('td.description')
           .contains(saida)
           .siblings()
           .children('img[onclick*=remove]')
           .click();
 
-         cy.get('#data-table tbody tr').should('have.length', 0);
+         cy.get('#data-table tbody tr').should('have.length', 2);
     });
 
-    it.only('Validar saldo com diversas transações', () =>{
+    it('Validar saldo com diversas transações', () =>{
         const entrada = 'Mesada';
         const saida = 'KinderOvo'
         cy.get('#transaction .button').click();
@@ -76,14 +80,14 @@ context('Dev Finances Agilizei', () => {
           .each(($el, index, $list) => {
             cy.get($el).find('td.income, td.expense')//captura as linhas com transacoes e as colunas com valores 
               .invoke('text').then(text => {
-                if(text.includes('-')){ //includes verifica se existe o sinal negativo
+                if(text.includes('-')){ 
                     expenses = expenses + format(text);
                 }else{
                     incomes = incomes + format(text);
                 }
                 cy.log('Entrada',incomes);
                 cy.log('Saídas',expenses);
-              })//invoke =serve para invocar uma funcao js retorna o texto
+              })
           })
           cy.get('#totalDisplay').invoke('text').then(text => {
               cy.log('valor total', format(text))
